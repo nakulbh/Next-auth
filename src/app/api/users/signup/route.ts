@@ -2,6 +2,8 @@ import { error } from "console";
 import prisma from "../../../../dbConfig/dbConfig";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
+import { User } from "@prisma/client";
+import { sendEmail } from "@/helpers/mailer";
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,6 +26,26 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newUser = await prisma.user.create({
+      data: {
+        username: username,
+        email: email,
+        password: hashedPassword,
+      },
+    });
+
+    //send verification email
+    await sendEmail({ email, emailType: "VERIFY", userId: newUser.id });
+
+    return NextResponse.json({
+      message: "User registered successfully",
+      success: true,
+      newUser,
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message },
