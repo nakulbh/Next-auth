@@ -23,7 +23,7 @@ model User {
   forgotPasswordToken       String?
   forgotPasswordTokenExpiry DateTime?
   verifyToken               String?
-  verifyTokenExpiry         DateTime?
+  verifyTokenExpiry         String?
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt
 }

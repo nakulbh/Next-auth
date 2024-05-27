@@ -6,10 +6,11 @@ import { User } from "@prisma/client";
 import { sendEmail } from "@/helpers/mailer";
 import { registerSchema } from "../../../../models/zodSchema/zodSchema";
 import { RegisterData } from "../../../../models/inferredType/user";
+import { connectToDatabase } from "@/dbConfig/dbConnect";
 
 export async function POST(request: NextRequest) {
   try {
-    const reqBody: RegisterData = request.json();
+    const reqBody = await request.json();
 
     const { username, email, password } = reqBody;
     //validation using zod
@@ -20,13 +21,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!parsedResult.success) {
-      return NextResponse.json(
-        { error: error?.issues[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: parsedResult.error }, { status: 400 });
     }
 
-    console.log(reqBody);
+    //make connection with the databse everytime req is made
+    await connectToDatabase();
 
     const user = await prisma.user.findUnique({
       where: {
@@ -52,9 +51,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log(newUser);
+
     //send verification email
     await sendEmail({ email, emailType: "VERIFY", userId: newUser.id });
-
+    console.log("after sending email");
     return NextResponse.json({
       message: "User registered successfully",
       success: true,
@@ -67,5 +68,7 @@ export async function POST(request: NextRequest) {
         status: 500,
       }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

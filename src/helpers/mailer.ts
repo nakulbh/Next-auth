@@ -1,26 +1,39 @@
 import nodemailer from "nodemailer";
 import prisma from "../dbConfig/dbConfig";
+import bcrypt from "bcrypt";
 
 export const sendEmail = async ({ email, emailType, userId }: any) => {
   try {
+    const HashedToken = await bcrypt.hash(userId.toString(), 10);
+
     if (emailType == "VERIFY") {
       const updateUser = await prisma.user.update({
         where: {
           id: userId,
         },
         data: {
-          verifyToken: "",
+          verifyToken: HashedToken,
+          verifyTokenExpiry: (Date.now() + 3600000).toString(),
+        },
+      });
+    } else if (emailType == "RESET") {
+      const updateUser = await prisma.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          forgotPasswordToken: HashedToken,
+          forgotPasswordTokenExpiry: (Date.now() + 3600000).toString(),
         },
       });
     }
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false, // Use `true` for port 465, `false` for all other ports
+    var transport = nodemailer.createTransport({
+      host: "sandbox.smtp.mailtrap.io",
+      port: 2525,
       auth: {
-        user: "maddison53@ethereal.email",
-        pass: "jn7jnAPss4f63QBp6D",
+        user: "3ac1112198e738",
+        pass: "********1614",
       },
     });
 
@@ -29,10 +42,18 @@ export const sendEmail = async ({ email, emailType, userId }: any) => {
       to: email, // list of receivers
       subject:
         emailType == "VERIFY" ? "Verify your email" : "Reset your password", // Subject line
-      html: "<b>Hello world?</b>", // html body
+      html: `<p>Click <a href="${
+        process.env.DOMAIN
+      }/verifyemail?token=${HashedToken}">here</a> to ${
+        emailType === "VERIFY" ? "verify your email" : "reset your password"
+      }
+            or copy and paste the link below in your browser. <br> ${
+              process.env.DOMAIN
+            }/verifyemail?token=${HashedToken}
+            </p>`, // html body
     };
 
-    const mailRes = await transporter.sendMail(mailOptions);
+    const mailRes = await transport.sendMail(mailOptions);
 
     return mailRes;
   } catch (error: any) {
