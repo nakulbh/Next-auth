@@ -1,8 +1,19 @@
 import nodemailer from "nodemailer";
+import prisma from "../dbConfig/dbConfig";
 
 export const sendEmail = async ({ email, emailType, userId }: any) => {
   try {
-    //todo: configure mail for usage
+    if (emailType == "VERIFY") {
+      const updateUser = await prisma.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          verifyToken: "",
+        },
+      });
+    }
+
     const transporter = nodemailer.createTransport({
       host: "smtp.ethereal.email",
       port: 587,
@@ -12,6 +23,7 @@ export const sendEmail = async ({ email, emailType, userId }: any) => {
         pass: "jn7jnAPss4f63QBp6D",
       },
     });
+
     const mailOptions = {
       from: "nakulbhardwaj37@gmail.com", // sender address
       to: email, // list of receivers
@@ -21,8 +33,9 @@ export const sendEmail = async ({ email, emailType, userId }: any) => {
     };
 
     const mailRes = await transporter.sendMail(mailOptions);
+
     return mailRes;
-  } catch (error) {
+  } catch (error: any) {
     throw new Error(error.message);
   }
 };

@@ -4,13 +4,27 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import { User } from "@prisma/client";
 import { sendEmail } from "@/helpers/mailer";
+import { registerSchema } from "../../../../models/zodSchema/zodSchema";
+import { RegisterData } from "../../../../models/inferredType/user";
 
 export async function POST(request: NextRequest) {
   try {
-    const reqBody = request.json();
+    const reqBody: RegisterData = request.json();
 
     const { username, email, password } = reqBody;
     //validation using zod
+    const parsedResult = registerSchema.safeParse({
+      username,
+      email,
+      password,
+    });
+
+    if (!parsedResult.success) {
+      return NextResponse.json(
+        { error: error?.issues[0].message },
+        { status: 400 }
+      );
+    }
 
     console.log(reqBody);
 
