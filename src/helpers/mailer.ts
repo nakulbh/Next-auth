@@ -13,7 +13,7 @@ export const sendEmail = async ({ email, emailType, userId }: any) => {
         },
         data: {
           verifyToken: HashedToken,
-          verifyTokenExpiry: (Date.now() + 3600000).toString(),
+          verifyTokenExpiry: new Date(Date.now() + 3600000),
         },
       });
     } else if (emailType == "RESET") {
@@ -28,27 +28,27 @@ export const sendEmail = async ({ email, emailType, userId }: any) => {
       });
     }
 
-    var transport = nodemailer.createTransport({
+    const transport = nodemailer.createTransport({
       host: "sandbox.smtp.mailtrap.io",
       port: 2525,
       auth: {
         user: "3ac1112198e738",
-        pass: "********1614",
+        pass: "6823c664141614",
       },
     });
 
     const mailOptions = {
-      from: "nakulbhardwaj37@gmail.com", // sender address
+      from: "nakulbhardwaj@gmail.com", // sender address
       to: email, // list of receivers
       subject:
         emailType == "VERIFY" ? "Verify your email" : "Reset your password", // Subject line
       html: `<p>Click <a href="${
-        process.env.DOMAIN
+        process.env.VERIFYMAUL_DOMAIN
       }/verifyemail?token=${HashedToken}">here</a> to ${
         emailType === "VERIFY" ? "verify your email" : "reset your password"
       }
             or copy and paste the link below in your browser. <br> ${
-              process.env.DOMAIN
+              process.env.VERIFYMAUL_DOMAIN
             }/verifyemail?token=${HashedToken}
             </p>`, // html body
     };
