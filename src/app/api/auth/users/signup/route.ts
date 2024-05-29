@@ -1,12 +1,11 @@
 import { error } from "console";
-import prisma from "../../../../dbConfig/dbConfig";
+import prisma from "../../../../../dbConfig/dbConfig";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import { User } from "@prisma/client";
 import { sendEmail } from "@/helpers/mailer";
-import { registerSchema } from "../../../../models/zodSchema/zodSchema";
-import { RegisterData } from "../../../../models/inferredType/user";
-import { connectToDatabase } from "@/dbConfig/dbConnect";
+import { registerSchema } from "../../../../../models/zodSchema/zodSchema";
+import { RegisterData } from "../../../../../models/inferredType/user";
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,9 +22,6 @@ export async function POST(request: NextRequest) {
     if (!parsedResult.success) {
       return NextResponse.json({ error: parsedResult.error }, { status: 400 });
     }
-
-    //make connection with the databse everytime req is made
-    await connectToDatabase();
 
     const user = await prisma.user.findUnique({
       where: {
@@ -51,11 +47,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log(newUser);
+    // console.log(newUser);
 
     //send verification email
     await sendEmail({ email, emailType: "VERIFY", userId: newUser.id });
-    console.log("after sending email");
+
     return NextResponse.json({
       message: "User registered successfully",
       success: true,
@@ -68,7 +64,5 @@ export async function POST(request: NextRequest) {
         status: 500,
       }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

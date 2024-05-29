@@ -10,12 +10,23 @@ export async function POST(request: NextRequest) {
     const reqBody = await request.json();
     const { email, password } = reqBody;
 
-    await connectToDatabase();
     const user = await prisma.user.findUniqueOrThrow({
       where: {
         email: email,
       },
     });
+
+    console.log(user);
+
+    // if (!user) {
+    //   return NextResponse.json({ message: "user not found" }, { status: 400 });
+    // } else {
+    //   console.log("user found");
+    // }
+
+    // if (!user.isVerified == true) {
+    //   console.log("user is not verified");
+    // }
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
@@ -24,6 +35,25 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const tokenData = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+    };
+    //create token
+    const token = jwt.sign(tokenData, process.env.TOKEN_SECRET!, {
+      expiresIn: "1d",
+    });
+
+    const response = NextResponse.json({
+      message: "Login successful",
+      success: true,
+    });
+    response.cookies.set("token", token, {
+      httpOnly: true,
+    });
+    return response;
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message },
@@ -31,7 +61,5 @@ export async function POST(request: NextRequest) {
         status: 500,
       }
     );
-  } finally {
-    prisma.$disconnect();
   }
 }

@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
     const { token } = reqBody;
     console.log(token);
 
-    await connectToDatabase();
     const user = await prisma.user.findFirst({
       where: {
         verifyToken: token,
@@ -22,7 +21,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Invalid Token" }, { status: 400 });
     }
-    console.log(user);
+    // console.log(user);
 
     const updatedUser = await prisma.user.update({
       where: {
@@ -46,7 +45,5 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
