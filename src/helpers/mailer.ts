@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import prisma from "../dbConfig/dbConfig";
 import bcrypt from "bcrypt";
+import { object } from "zod";
 
 export const sendEmail = async ({ email, emailType, userId }: any) => {
   try {
@@ -28,12 +29,27 @@ export const sendEmail = async ({ email, emailType, userId }: any) => {
       });
     }
 
-    const transport = nodemailer.createTransport({
+    if (
+      !process.env.MAILTRAP_HOST ||
+      !process.env.MAILTRAP_AUTH_USER ||
+      !process.env.MAILTRAP_AUTH_PASS
+    ) {
+      throw new Error(
+        "Missing required environment variables for email transport."
+      );
+    }
+
+    const connection = {
       host: process.env.MAILTRAP_HOST,
-      port: process.env.MAILTRAP_HOST,
+    };
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.MAILTRAP_HOST,
+      port: 2525,
+      secure: false, // Use `true` for port 465, `false` for all other ports
       auth: {
         user: process.env.MAILTRAP_AUTH_USER,
-        pass: process.env.MAILTRAP_AUTH_PASS,
+        pass: process.env.MAILTRAP_AUTH_PAS,
       },
     });
 
@@ -53,7 +69,7 @@ export const sendEmail = async ({ email, emailType, userId }: any) => {
             </p>`, // html body
     };
 
-    const mailRes = await transport.sendMail(mailOptions);
+    const mailRes = await transporter.sendMail(mailOptions);
 
     return mailRes;
   } catch (error: any) {
